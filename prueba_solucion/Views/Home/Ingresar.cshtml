@@ -1,0 +1,144 @@
+﻿@{
+    ViewData["Title"] = "Crear Cliente";
+}
+
+<h2>Crear Cliente</h2>
+
+<form id="crearClienteForm">
+    <div class="form-group">
+        <label for="Nombre">Nombre</label>
+        <input type="text" class="form-control" id="Nombre" name="Nombre" required />
+    </div>
+    <div class="form-group">
+        <label for="Telefono">Teléfono</label>
+        <input type="text" class="form-control" id="Telefono" name="Telefono" required />
+        <div class="invalid-feedback">El teléfono debe ser numérico y tener al menos 10 caracteres.</div>
+    </div>
+    <div class="form-group">
+        <label for="Correo">Correo</label>
+        <input type="email" class="form-control" id="Correo" name="Correo" required />
+        <div class="invalid-feedback">El correo no es válido.</div>
+    </div>
+    <div class="form-group">
+        <label for="Nit">NIT</label>
+        <input type="text" class="form-control" id="Nit" name="Nit" required />
+    </div>
+    <div class="form-group">
+        <label for="Direccion">Dirección</label>
+        <input type="text" class="form-control" id="Direccion" name="Direccion" />
+    </div>
+    <div class="form-group">
+        <label for="FechaNacimiento">Fecha de Nacimiento</label>
+        <input type="date" class="form-control" id="FechaNacimiento" name="FechaNacimiento" required />
+    </div>
+    <div style="text-align:center;margin-top:20px;">
+        <button type="submit"  id="btnSubmit" class="btn btn-primary">Crear Cliente</button>
+    </div>
+    <div style="text-align:center;display:none;margin-top:20px;" id="loader">
+        <div class="spinner-border text-primary"></div>
+    </div>
+</form>
+
+<div id="result"></div>
+
+@section Scripts {
+    <script>
+
+        function limpiarInputs() //limpiamos los inputs cuando la insercion sea exitosa
+        {
+           $("#Nombre").val(""),
+           $("#Telefono").val(""),
+           $("#Correo").val(""),
+           $("#Nit").val(""),
+           $("#Direccion").val(""),
+           $("#FechaNacimiento").val("")
+        }
+
+        $(document).ready(function () {            
+            //solo permitimos que se ingresen numeros
+            $("#Telefono").on("input", function () {
+                var telefono = $(this).val();
+                telefono = telefono.replace(/\D/g, '');
+                $(this).val(telefono);
+            });
+
+            $("#btnSubmit").click("submit", function (event) {
+                event.preventDefault();
+
+                $("#result").hide();
+
+                var isValid = true;
+                var formData = {
+                    Nombre: $("#Nombre").val(),
+                    Telefono: $("#Telefono").val(),
+                    Correo: $("#Correo").val(),
+                    Nit: $("#Nit").val(),
+                    Direccion: $("#Direccion").val(),
+                    FechaNacimiento: $("#FechaNacimiento").val()
+                };
+
+                // limpiamos errores de validacion
+                $(".form-control").removeClass("is-invalid");
+                $(".invalid-feedback").hide();
+
+                // validamos nombre
+                if (!formData.Nombre) {
+                    $("#Nombre").addClass("is-invalid");
+                    isValid = false;
+                }
+
+                // validamos telefono
+                if (!/^\d{10,}$/.test(formData.Telefono)) {
+                    $("#Telefono").addClass("is-invalid");
+                    $("#Telefono").next(".invalid-feedback").show();
+                    isValid = false;
+                }
+
+                // validamos correo
+                var emailPattern = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailPattern.test(formData.Correo)) {
+                    $("#Correo").addClass("is-invalid");
+                    $("#Correo").next(".invalid-feedback").show();
+                    isValid = false;
+                }
+
+                // validamos nit
+                if (!formData.Nit) {
+                    $("#Nit").addClass("is-invalid");
+                    isValid = false;
+                }
+
+                // validamos fechanacimiento
+                if (!formData.FechaNacimiento) {
+                    $("#FechaNacimiento").addClass("is-invalid");
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    $("#btnSubmit").prop("disabled", true);
+                    $("#loader").show();
+                    $.ajax({
+                        url: "/crearcliente",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(formData),
+                        success: function (response) {
+                            $("#loader").hide();
+                            $("#result").show();
+                             limpiarInputs() //limpiamos los inputs cuando la insercion sea exitosa
+                            $("#result").html(`<div class="alert alert-success" style="text-align:center;margin-top:25px;">${response.msm}</div>`);//mostramos la respuesta
+                        },
+                        error: function (response) {
+                            var errorResponse = response.responseJSON;
+                            $("#loader").hide();
+                            $("#result").show();
+                            $("#result").html(`<div class="alert alert-danger" style="text-align:center;margin-top:25px;">${errorResponse.msm}</div>`);//mostramos la respuesta erronea
+                        }
+                    });
+                } else {
+                    $("#result").html(`<div class="alert alert-danger" style="text-align:center;margin-top:25px;">Por favor corrige los errores en el formulario.</div>`);
+                }
+            });
+        });
+    </script>
+}

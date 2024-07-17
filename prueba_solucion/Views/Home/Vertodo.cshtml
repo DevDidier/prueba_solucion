@@ -1,0 +1,94 @@
+﻿@{
+    ViewData["Title"] = "Clientes";
+}
+
+<div class="container">
+    <h2>Clientes Activos</h2>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Teléfono</th>
+                <th scope="col">Correo</th>
+                <th scope="col">NIT</th>
+                <th scope="col">Dirección</th>
+                <th scope="col">Fecha de Registro</th>
+                <th scope="col">Fecha de Nacimiento</th>
+                <th scope="col">Eliminar</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+</div>
+
+<div style="text-align:center;margin-top:20px;" id="loader">
+    <div class="spinner-border text-primary"></div>
+</div>
+
+<div id="result" style="position: fixed; top:80px;text-align: center;left:50%;">
+ </div>
+
+@section Scripts {
+    <script>
+
+        function getClientes() {
+            $.ajax({
+                url: "/clientes",
+                type: "GET",
+                contentType: "application/json",
+                success: function (response) {
+                    let filas = "";
+                    response.data.forEach(function (res) {//recorremos los datos para montar la tabla
+                        filas += `<tr id=fila_${res.id}>`;
+                        filas += `<td>${res.nombre}</td>`;
+                        filas += `<td>${res.telefono}</td>`;
+                        filas += `<td>${res.correo}</td>`;
+                        filas += `<td>${res.nit}</td>`;
+                        filas += `<td>${res.direccion}</td>`;
+                        filas += `<td>${res.fechaSys.replace("T", " ")}</td>`;
+                        filas += `<td>${res.fechaNacimiento.replace("T", " ")}</td>`;
+                        filas += `<td><button class='btn btn-danger' style='width:100%;' id="deleteBtn_${res.id}" onClick=(Eliminar(${res.id}))><b>X</b></button></td>`;
+                        filas += `</tr>`;
+                    });
+                    $("#loader").hide();//mostramos la tabla
+                    $("#tableBody").html(filas);//añadimos las filas
+                },
+                error: function (response) {
+                    var errorResponse = response.responseJSON;
+                    $("#loader").hide();
+                    $("#result").show();
+                    $("#result").html(`<div class="alert alert-danger" style="text-align:center;margin-top:25px;">${errorResponse.msm}</div>`);//mostramos la respuesta erronea
+                }
+            });
+        }
+
+        function Eliminar(id) {// funcion para eliminar un cliente
+            $("#result").hide()
+            $(`#deleteBtn_${id}`).html("<div class=spinner-border text-light></div>");
+            $.ajax({
+                url: `/eliminar_cliente/${id}`,
+                type: "DELETE",
+                contentType: "application/json",
+                success: function (response) {
+                    $(`#deleteBtn_${id}`).html("<b>X</b>");
+                    $("#result").html(`<div class="alert alert-success" style = "text-align:center;" >${response.msm}</div>`);
+                    $("#result").show();
+                    $("#result").fadeOut(5000);
+                    $(`#fila_${id}`).remove();
+                },
+                error: function (response) {
+                    var errorResponse = response.responseJSON;
+                    $(`#deleteBtn_${id}`).html("<b>X</b>");
+                    $("#result").html(`<div class="alert alert-danger" style="text-align:center;margin-top:25px;">${errorResponse.msm}</div>`);
+                    $("#result").show();
+                    $("#result").fadeOut(5000);
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            getClientes()//ejecutamos al iniciar la vista
+        });
+    </script>
+}
